@@ -38,6 +38,14 @@ namespace Notifier
             ConfigureToastTimer();
             ConfigureUiTimer();
             ShowToast(_title, _startupMessage);
+            this.Closing += MainWindow_Closing;
+        }
+
+        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // Intercept close and hide to tray
+            e.Cancel = true;
+            this.Hide();
         }
 
         private void LoadConfiguration()
