@@ -54,5 +54,13 @@ namespace Notifier
             var toast = new ToastNotification(content.GetXml());
             ToastNotificationManagerCompat.CreateToastNotifier().Show(toast);
         }
+
+        private void ResetButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_toastTimer is null) return;
+            _toastTimer.Stop();
+            _toastTimer.Start();
+            ShowToast("Timer reset", "The 40-minute timer has been restarted.");
+        }
     }
 }

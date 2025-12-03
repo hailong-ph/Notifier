@@ -5,8 +5,26 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Notifier"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="Notifier" Height="200" Width="320">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
+        <!-- Content area -->
+        <TextBlock Grid.Row="0"
+                   Text="Toast reminder."
+                   TextWrapping="Wrap"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Center"/>
+
+        <!-- Reset button -->
+        <Button Grid.Row="1"
+                Margin="0,12,0,0"
+                Padding="12,6"
+                HorizontalAlignment="Center"
+                Content="Reset Timer"
+                Click="ResetButton_Click"/>
     </Grid>
 </Window>
