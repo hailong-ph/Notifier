@@ -12,6 +12,8 @@ using System;
 using System.Windows.Threading;
 using Microsoft.Toolkit.Uwp.Notifications; // ToastContentBuilder, ToastNotificationManagerCompat
 using Windows.UI.Notifications; // ToastNotification
+using Microsoft.Extensions.Configuration;
+using System.IO;
 
 namespace Notifier
 {
@@ -21,23 +23,70 @@ namespace Notifier
     public partial class MainWindow : Window
     {
         private DispatcherTimer _toastTimer;
+        private IConfiguration _config;
+        private int _intervalMinutes;
+        private string _reminderMessage;
+        private string _startupMessage;
+        private string _title;
 
         public MainWindow()
         {
             InitializeComponent();
+            LoadConfiguration();
             ConfigureToastTimer();
-            ShowToast("Notifier started", "You will receive a reminder every 40 minutes.");
+            ShowToast(_title, _startupMessage);
+        }
+
+        private void LoadConfiguration()
+        {
+            // Defaults in case configuration is missing or invalid
+            const int defaultInterval = 40;
+            const string defaultReminderMessage = "站起来！走两步？！";
+            const string defaultTitle = "Reminder";
+
+            // Determine app base path and load appsettings.json (optional)
+            var basePath = AppContext.BaseDirectory;
+
+            try
+            {
+                var builder = new ConfigurationBuilder()
+                    .SetBasePath(basePath)
+                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+
+                _config = builder.Build();
+            }
+            catch
+            {
+                // If configuration building fails, use an empty configuration
+                _config = new ConfigurationBuilder().Build();
+            }
+
+            var reminderSection = _config.GetSection("Reminder");
+
+            // Read values with safe fallbacks
+            int configuredInterval = reminderSection.GetValue<int>("IntervalMinutes", defaultInterval);
+            _intervalMinutes = configuredInterval > 0 ? configuredInterval : defaultInterval;
+
+            _reminderMessage = reminderSection.GetValue<string>("Message") ?? defaultReminderMessage;
+
+            _title = reminderSection.GetValue<string>("Title") ?? defaultTitle;
+
+            // Startup message can reference the resolved interval
+            var configuredStartupMessage = reminderSection.GetValue<string>("StartupMessage");
+            _startupMessage = string.IsNullOrWhiteSpace(configuredStartupMessage)
+                ? $"You will receive a reminder every {_intervalMinutes} minutes."
+                : configuredStartupMessage;
         }
 
         private void ConfigureToastTimer()
         {
             _toastTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMinutes(40)
+                Interval = TimeSpan.FromMinutes(_intervalMinutes)
             };
             _toastTimer.Tick += (_, __) =>
             {
-                ShowToast("Reminder", "站起来！ 走两步？！");
+                ShowToast(_title, _reminderMessage);
             };
             _toastTimer.Start();
         }
@@ -59,16 +108,18 @@ namespace Notifier
         {
             if (_toastTimer is null) return;
             _toastTimer.Stop();
+            _toastTimer.Interval = TimeSpan.FromMinutes(_intervalMinutes);
             _toastTimer.Start();
-            ShowToast("Timer reset", "The 40-minute timer has been restarted.");
+            ShowToast(_title, $"The {_intervalMinutes}-minute timer has been restarted.");
         }
 
         public void ResetTimerFromTray()
         {
             if (_toastTimer is null) return;
             _toastTimer.Stop();
+            _toastTimer.Interval = TimeSpan.FromMinutes(_intervalMinutes);
             _toastTimer.Start();
-            ShowToast("Timer reset", "The 40-minute timer has been restarted.");
+            ShowToast(_title, $"The {_intervalMinutes}-minute timer has been restarted.");
         }
     }
 }
