@@ -1,3 +1,5 @@
+﻿using CommunityToolkit.WinUI.Notifications;
+
 namespace MyNotifier
 {
     public class Worker : BackgroundService
@@ -17,7 +19,13 @@ namespace MyNotifier
                 {
                     _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
                 }
-                await Task.Delay(1000, stoppingToken);
+
+                new ToastContentBuilder()
+                    .AddText("站起来走两步！")
+                    .AddText($"Worker running at: {DateTimeOffset.Now}")
+                    ;
+
+                await Task.Delay(40 * 60 * 1000, stoppingToken);
             }
         }
     }
