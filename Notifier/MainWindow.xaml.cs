@@ -23,6 +23,8 @@ namespace Notifier
     public partial class MainWindow : Window
     {
         private DispatcherTimer _toastTimer;
+        private DispatcherTimer _uiTimer;
+        private DateTime _nextReminderUtc;
         private IConfiguration _config;
         private int _intervalMinutes;
         private string _reminderMessage;
@@ -34,6 +36,7 @@ namespace Notifier
             InitializeComponent();
             LoadConfiguration();
             ConfigureToastTimer();
+            ConfigureUiTimer();
             ShowToast(_title, _startupMessage);
         }
 
@@ -87,8 +90,34 @@ namespace Notifier
             _toastTimer.Tick += (_, __) =>
             {
                 ShowToast(_title, _reminderMessage);
+                ScheduleNextReminder();
             };
             _toastTimer.Start();
+            ScheduleNextReminder();
+        }
+
+        private void ConfigureUiTimer()
+        {
+            _uiTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _uiTimer.Tick += (_, __) => UpdateRemainingText();
+            _uiTimer.Start();
+            UpdateRemainingText();
+        }
+
+        private void ScheduleNextReminder()
+        {
+            _nextReminderUtc = DateTime.UtcNow.AddMinutes(_intervalMinutes);
+        }
+
+        private void UpdateRemainingText()
+        {
+            var remaining = _nextReminderUtc - DateTime.UtcNow;
+            if (remaining <= TimeSpan.Zero)
+            {
+                RemainingText.Text = "00:00";
+                return;
+            }
+            RemainingText.Text = $"{(int)remaining.TotalMinutes:00}:{remaining.Seconds:00}";
         }
 
         private static void ShowToast(string title, string message)
@@ -110,7 +139,8 @@ namespace Notifier
             _toastTimer.Stop();
             _toastTimer.Interval = TimeSpan.FromMinutes(_intervalMinutes);
             _toastTimer.Start();
-            ShowToast(_title, $"The {_intervalMinutes}-minute timer has been restarted.");
+            ScheduleNextReminder();
+            //ShowToast(_title, $"The {_intervalMinutes}-minute timer has been restarted.");
         }
 
         public void ResetTimerFromTray()
@@ -119,6 +149,7 @@ namespace Notifier
             _toastTimer.Stop();
             _toastTimer.Interval = TimeSpan.FromMinutes(_intervalMinutes);
             _toastTimer.Start();
+            ScheduleNextReminder();
             ShowToast(_title, $"The {_intervalMinutes}-minute timer has been restarted.");
         }
     }
