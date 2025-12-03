@@ -62,5 +62,13 @@ namespace Notifier
             _toastTimer.Start();
             ShowToast("Timer reset", "The 40-minute timer has been restarted.");
         }
+
+        public void ResetTimerFromTray()
+        {
+            if (_toastTimer is null) return;
+            _toastTimer.Stop();
+            _toastTimer.Start();
+            ShowToast("Timer reset", "The 40-minute timer has been restarted.");
+        }
     }
 }
