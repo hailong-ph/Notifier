@@ -1,11 +1,15 @@
 ﻿namespace Notifier_Avalonia.ViewModels;
 
 using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Timers;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Configuration;
+#if WINDOWS
 using Microsoft.Toolkit.Uwp.Notifications;
 using Windows.UI.Notifications;
+#endif
 
 public partial class MainWindowViewModel : ViewModelBase
 {
@@ -115,13 +119,43 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            var content = new ToastContentBuilder()
-                .AddText(title)
-                .AddText(message)
-                .GetToastContent();
-
-            var toast = new ToastNotification(content.GetXml());
-            Microsoft.Toolkit.Uwp.Notifications.ToastNotificationManagerCompat.CreateToastNotifier().Show(toast);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+#if WINDOWS
+                var content = new ToastContentBuilder()
+                    .AddText(title)
+                    .AddText(message)
+                    .GetToastContent();
+                var toast = new ToastNotification(content.GetXml());
+                ToastNotificationManagerCompat.CreateToastNotifier().Show(toast);
+#else
+                Debug.WriteLine($"[Toast] {title}: {message}");
+#endif
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                // Linux: try notify-send if available
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "notify-send",
+                    ArgumentList = { title, message },
+                    UseShellExecute = false
+                });
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                // macOS: use AppleScript notification
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "osascript",
+                    ArgumentList = { "-e", $"display notification \"{message}\" with title \"{title}\"" },
+                    UseShellExecute = false
+                });
+            }
+            else
+            {
+                Debug.WriteLine($"[Toast] {title}: {message}");
+            }
         }
         catch
         {
