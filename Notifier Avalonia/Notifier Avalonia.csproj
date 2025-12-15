@@ -5,12 +5,12 @@
 		<Nullable>enable</Nullable>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-		<Configurations>Debug;Release;Debug-Winfows</Configurations>
+		<Configurations>Debug;Release;net9.0-windows10.0.19041.0</Configurations>
 		<Platforms>AnyCPU;x64</Platforms>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(TargetFramework)'=='net9.0-windows10.0.19041.0'">
-		<DefineConstants>WINDOWS;$(DefineConstants)</DefineConstants>
+	<PropertyGroup Condition="'$(Configuration)'=='net9.0-windows10.0.19041.0'">
+		<DefineConstants>$(DefineConstants);WINDOWS</DefineConstants>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -30,9 +30,10 @@
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
 	</ItemGroup>
 
-	<ItemGroup Condition="'$(TargetFramework)'=='net9.0-windows10.0.19041.0'">
+	<ItemGroup Condition="'$(Configuration)'=='net9.0-windows10.0.19041.0'">
 		<PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
 	</ItemGroup>
 </Project>

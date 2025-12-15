@@ -60,12 +60,15 @@ namespace Notifier
 
             // Create but do not show main window
             var window = new MainWindow();
-            window.Hide();
+            window.SourceInitialized += (_, __) =>
+            {
+                var helper = new WindowInteropHelper(window);
+                _source = HwndSource.FromHwnd(helper.Handle);
+                _source.AddHook(HwndHook);
+                RegisterHotKey(helper.Handle, HOTKEY_ID, MOD_WIN | MOD_CONTROL, VK_R);
+            };
 
-            var helper = new WindowInteropHelper(window);
-            _source = HwndSource.FromHwnd(helper.Handle);
-            _source.AddHook(HwndHook);
-            RegisterHotKey(helper.Handle, HOTKEY_ID, MOD_WIN | MOD_CONTROL, VK_R);
+            window.Hide();
         }
 
         protected override void OnExit(ExitEventArgs e)
