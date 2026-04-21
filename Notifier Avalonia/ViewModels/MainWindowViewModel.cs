@@ -1,11 +1,14 @@
 ﻿namespace Notifier_Avalonia.ViewModels;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Timers;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Configuration;
+using Tmds.DBus;
 #if WINDOWS
 using Microsoft.Toolkit.Uwp.Notifications;
 using Windows.UI.Notifications;
@@ -134,13 +137,10 @@ public partial class MainWindowViewModel : ViewModelBase
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                // Linux: try notify-send if available
-                Process.Start(new ProcessStartInfo
+                if (!TryShowLinuxNotification(title, message))
                 {
-                    FileName = "notify-send",
-                    ArgumentList = { title, message },
-                    UseShellExecute = false
-                });
+                    Debug.WriteLine($"[Toast] {title}: {message}");
+                }
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
@@ -161,6 +161,63 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             // Swallow exceptions to avoid crashing startup on unsupported environments
         }
+    }
+
+    private static bool TryShowLinuxNotification(string title, string message)
+    {
+        try
+        {
+            using var connection = new Connection(Address.Session);
+            connection.ConnectAsync().GetAwaiter().GetResult();
+
+            var notifications = connection.CreateProxy<IFreedesktopNotifications>(
+                "org.freedesktop.Notifications",
+                "/org/freedesktop/Notifications");
+
+            notifications.NotifyAsync(
+                "Notifier Avalonia",
+                0,
+                string.Empty,
+                title,
+                message,
+                Array.Empty<string>(),
+                new Dictionary<string, object>(),
+                5000).GetAwaiter().GetResult();
+
+            return true;
+        }
+        catch
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "notify-send",
+                    ArgumentList = { title, message },
+                    UseShellExecute = false
+                });
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    [DBusInterface("org.freedesktop.Notifications")]
+    private interface IFreedesktopNotifications : IDBusObject
+    {
+        Task<uint> NotifyAsync(
+            string appName,
+            uint replacesId,
+            string appIcon,
+            string summary,
+            string body,
+            string[] actions,
+            IDictionary<string, object> hints,
+            int expireTimeout);
     }
 
     private void ResetTimer()
